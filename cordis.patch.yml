@@ -1,0 +1,9 @@
+# dsh-document-path-copy bundle patch: mount the document-path copy plugin.
+#
+# The host half (package root) is inert. The browser half is discovered
+# automatically through this package's `dsh.client` declaration plus
+# `exports["./client"]`, and it is where the whole feature lives.
+
+- insert:
+    - id: document-path-copy
+      name: 'dsh-document-path-copy'
