@@ -139,7 +139,10 @@ function mount({ accepted }) {
 
 const failed = mount({ accepted: false });
 let tree = failed.render();
-assert.equal(find(tree, (node) => node.props.role === "status"), undefined, "idle must show no status");
+const idle = find(tree, (node) => node.props.role === "status");
+assert.ok(idle, "the live region must be mounted before its first message");
+assert.equal(idle.props.children, "", "the mounted live region starts empty");
+assert.equal(idle.props["data-document-path-copy-status"], "idle");
 
 const button = find(tree, (node) => node.type === "button");
 assert.ok(button, "the header affordance must render a button");

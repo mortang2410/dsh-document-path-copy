@@ -49,8 +49,9 @@ window.__ModuleLoader__.load({
 .dsh-document-path-copy__tool{width:28px;height:28px;color:var(--dsw-alias-label-secondary);border-radius:var(--dsw-radius-sm);cursor:pointer;background:0 0;border:none;flex:none;justify-content:center;align-items:center;padding:6px;line-height:1;display:inline-flex}
 .dsh-document-path-copy__tool:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
 .dsh-document-path-copy__tool svg{width:15px;height:15px}
-.dsh-document-path-copy__status{position:absolute;top:100%;right:0;margin-top:4px;z-index:1;white-space:nowrap;pointer-events:none;padding:2px 6px;border:1px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-primary);font-size:11px;line-height:16px}
-.dsh-document-path-copy__status[data-document-path-copy-status="failed"]{color:var(--dsw-alias-state-error-primary)}
+.dsh-document-path-copy__status{position:absolute;top:100%;right:0;z-index:1;white-space:nowrap;pointer-events:none;color:var(--dsw-alias-label-primary);font-size:11px;line-height:16px}
+.dsh-document-path-copy__status:not(:empty){margin-top:4px;padding:2px 6px;border:1px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3)}
+.dsh-document-path-copy__status[data-document-path-copy-status="failed"]:not(:empty){color:var(--dsw-alias-state-error-primary)}
 `;
 
     /** Required client services: the slot registry and the locale dictionaries. */
@@ -124,15 +125,15 @@ window.__ModuleLoader__.load({
                       : jsx(P.IconCopyOutlineRegular, {}),
                 }),
               }),
-              state === "idle"
-                ? null
-                : jsx("span", {
-                    className: "dsh-document-path-copy__status",
-                    role: "status",
-                    "aria-live": "polite",
-                    "data-document-path-copy-status": state,
-                    children: t(state),
-                  }),
+              // Mounted empty so the live region exists before its first
+              // message; the stylesheet collapses the empty one visually.
+              jsx("span", {
+                className: "dsh-document-path-copy__status",
+                role: "status",
+                "aria-live": "polite",
+                "data-document-path-copy-status": state,
+                children: state === "idle" ? "" : t(state),
+              }),
             ],
           }),
           jsx(P.Menu, {
