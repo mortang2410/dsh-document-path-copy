@@ -10,6 +10,10 @@
  *
  * Both use the slot owner prop `absolutePath` - the Host path the preview was
  * opened with - so the path is never reconstructed from the clipped label.
+ *
+ * Neither affordance relies on the tooltip to report the outcome: the tooltip
+ * withdraws on the click that starts the copy, so the result is also written to
+ * a live status message that outlives it.
  */
 window.__ModuleLoader__.load({
   id: "dsh-document-path-copy",
@@ -25,7 +29,8 @@ window.__ModuleLoader__.load({
     const NS = "documentPathCopy";
     const SLOT = "sidebar.right.tab.document.actions";
     const PATH_SELECTOR = "[data-textpreview-path]";
-    const FEEDBACK_MS = 1500;
+    const COPIED_MS = 1500;
+    const FAILED_MS = 4000;
 
     const zh = {
       copy: "复制完整路径",
@@ -40,9 +45,12 @@ window.__ModuleLoader__.load({
     };
 
     const css = `
+.dsh-document-path-copy{position:relative;display:inline-flex;align-items:center}
 .dsh-document-path-copy__tool{width:28px;height:28px;color:var(--dsw-alias-label-secondary);border-radius:var(--dsw-radius-sm);cursor:pointer;background:0 0;border:none;flex:none;justify-content:center;align-items:center;padding:6px;line-height:1;display:inline-flex}
 .dsh-document-path-copy__tool:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
 .dsh-document-path-copy__tool svg{width:15px;height:15px}
+.dsh-document-path-copy__status{position:absolute;top:100%;right:0;margin-top:4px;z-index:1;white-space:nowrap;pointer-events:none;padding:2px 6px;border:1px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-primary);font-size:11px;line-height:16px}
+.dsh-document-path-copy__status[data-document-path-copy-status="failed"]{color:var(--dsw-alias-state-error-primary)}
 `;
 
     /** Required client services: the slot registry and the locale dictionaries. */
@@ -77,7 +85,7 @@ window.__ModuleLoader__.load({
         const ok = await P.writeClipboard(path);
         setState(ok ? "copied" : "failed");
         clearTimeout(timer.current);
-        timer.current = setTimeout(() => setState("idle"), FEEDBACK_MS);
+        timer.current = setTimeout(() => setState("idle"), ok ? COPIED_MS : FAILED_MS);
       }, [path]);
 
       // The path label clips long paths, so right-click offers the whole one.
@@ -97,21 +105,35 @@ window.__ModuleLoader__.load({
 
       return jsxs(Fragment, {
         children: [
-          jsx(P.Tooltip, {
-            label: tooltip,
-            side: "bottom",
-            delayMs: 400,
-            children: jsx("button", {
-              type: "button",
-              className: "dsh-document-path-copy__tool",
-              "aria-label": t("copy"),
-              "data-document-path-copy": true,
-              onClick: copy,
-              children:
-                state === "copied"
-                  ? jsx(P.IconCheckOutlineRegular, {})
-                  : jsx(P.IconCopyOutlineRegular, {}),
-            }),
+          jsxs("span", {
+            className: "dsh-document-path-copy",
+            children: [
+              jsx(P.Tooltip, {
+                label: tooltip,
+                side: "bottom",
+                delayMs: 400,
+                children: jsx("button", {
+                  type: "button",
+                  className: "dsh-document-path-copy__tool",
+                  "aria-label": t("copy"),
+                  "data-document-path-copy": true,
+                  onClick: copy,
+                  children:
+                    state === "copied"
+                      ? jsx(P.IconCheckOutlineRegular, {})
+                      : jsx(P.IconCopyOutlineRegular, {}),
+                }),
+              }),
+              state === "idle"
+                ? null
+                : jsx("span", {
+                    className: "dsh-document-path-copy__status",
+                    role: "status",
+                    "aria-live": "polite",
+                    "data-document-path-copy-status": state,
+                    children: t(state),
+                  }),
+            ],
           }),
           jsx(P.Menu, {
             open: menu !== null,
@@ -151,6 +173,7 @@ window.__ModuleLoader__.load({
       );
     }
 
+    exports.name = "dsh-document-path-copy";
     exports.apply = apply;
     exports.inject = inject;
     return module.exports;

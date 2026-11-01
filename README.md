@@ -10,9 +10,12 @@ Two ways in, both reading the Host path the preview was opened with:
   menu on that label with a single "Copy full path" item, because the label
   clips long paths and the browser menu cannot produce the whole path.
 
-The button reports the outcome in its tooltip (`Copied full path`, `Copy
-failed`) and switches to a check mark for a moment. Labels are registered in
-English and Chinese, so they follow the app locale instead of the plugin.
+The button reports the outcome in a short status message under the header
+control, and switches to a check mark on success. The message outlives the click
+because the tooltip withdraws on that click, and copying from the context menu
+reports through the same message, so a failed write is never silent. Labels are
+registered in English and Chinese, so they follow the app locale instead of the
+plugin.
 
 ## Install
 
@@ -34,4 +37,6 @@ behavior, no routes, no credentials, and no configuration.
   so it does not touch any other span in the app.
 - Clipboard writes go through `writeClipboard` from
   `@deepseek-ai/dsh-client-ui-primitives`, which prefers the async Clipboard API
-  and falls back to `execCommand('copy')`.
+  and falls back to `execCommand('copy')` only when that API is absent. A
+  rejected async write returns `false` and is not retried through the fallback,
+  so the status message reports that rejection instead of a silent success.

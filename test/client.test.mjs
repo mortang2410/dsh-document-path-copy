@@ -1,10 +1,11 @@
 /**
  * Contract test for the client half, run without a browser.
  *
- * It pins the four install sites that must agree (package name, loader id,
- * bundle row name, slot registration) plus the dictionary shape and the slot
- * cell this plugin claims. Rendering is not exercised here; the live page is
- * the only place that can prove the button draws.
+ * It pins the naming contract that must agree across four sites (package name,
+ * loader id, row name, exported plugin names), the bundle patch row, the
+ * injection list, the slot cell this plugin claims, and the dictionary shape.
+ * Rendering and clipboard behavior are pinned by component.test.mjs; the live
+ * page is the only place that can prove the button draws.
  */
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
@@ -44,7 +45,18 @@ assert.equal(pkg.exports["./client"], "./client.js");
 assert.equal(pkg.dsh.bundle.patch, "./cordis.patch.yml");
 
 assert.equal(typeof exported.apply, "function");
+assert.equal(exported.name, pkg.name, "browser half must export the bundle key as its name");
 assert.deepEqual(exported.inject, ["slots", "locale"]);
+
+const host = await import(join(root, "index.js"));
+assert.equal(host.name, pkg.name, "host half must export the bundle key as its name");
+assert.equal(typeof host.apply, "function");
+
+const patch = await readFile(join(root, "cordis.patch.yml"), "utf8");
+const row = patch.match(/-\s*id:\s*(\S+)\s*\n\s*name:\s*'([^']+)'/);
+assert.ok(row !== null, "bundle patch must declare one row with an id and a name");
+assert.equal(row[1], "document-path-copy", "row id is the mount id and stays distinct");
+assert.equal(row[2], pkg.name, "row name must equal the package name");
 
 const seen = { dictionaries: undefined, namespace: undefined, slot: undefined };
 const ctx = {
